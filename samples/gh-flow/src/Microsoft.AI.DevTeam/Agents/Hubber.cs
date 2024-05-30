@@ -9,7 +9,6 @@ namespace Microsoft.AI.DevTeam;
 [ImplicitStreamSubscription(Consts.MainNamespace)]
 public class Hubber : Agent
 {
-     protected override string Namespace => Consts.MainNamespace;
     private readonly IManageGithub _ghService;
 
     public Hubber(IManageGithub ghService)

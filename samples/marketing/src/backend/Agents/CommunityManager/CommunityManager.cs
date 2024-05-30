@@ -9,26 +9,23 @@ using Orleans.Runtime;
 namespace Marketing.Agents;
 
 [ImplicitStreamSubscription(Consts.OrleansNamespace)]
-public class CommunityManager : AiAgent<CommunityManagerState>
+public partial class CommunityManager(
+    [PersistentState("state", "messages")] IPersistentState<AgentState<CommunityManagerState>> state,
+    Kernel kernel, 
+    ISemanticTextMemory memory,
+    ILogger<GraphicDesigner> logger) : AiAgent<CommunityManagerState>(state, memory, kernel)
 {
-    protected override string Namespace => Consts.OrleansNamespace;
-
-    private readonly ILogger<GraphicDesigner> _logger;
-
-    public CommunityManager([PersistentState("state", "messages")] IPersistentState<AgentState<CommunityManagerState>> state, Kernel kernel, ISemanticTextMemory memory, ILogger<GraphicDesigner> logger) 
-    : base(state, memory, kernel)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<GraphicDesigner> _logger = logger;
 
     public async override Task HandleEvent(Event item)
     {
+        ArgumentNullException.ThrowIfNull(item);
         switch (item.Type)
         {
             case nameof(EventTypes.UserConnected):
                 // The user reconnected, let's send the last message if we have one
-                string lastMessage = _state.State.History.LastOrDefault()?.Message;
-                if (lastMessage == null)
+                var lastMessage = State.State.History.LastOrDefault()?.Message;
+                if (lastMessage is null)
                 {
                     return;
                 }
@@ -36,18 +33,16 @@ public class CommunityManager : AiAgent<CommunityManagerState>
                 await SendDesignedCreatedEvent(lastMessage, item.Data["UserId"]);
                 break;
 
-            case nameof(EventTypes.ArticleCreated):   
-            {
-                var article = item.Data["article"]; 
-
-                _logger.LogInformation($"[{nameof(GraphicDesigner)}] Event {nameof(EventTypes.ArticleCreated)}. Article: {article}");
-                    
-                var context = new KernelArguments { ["input"] = AppendChatHistory(article) };
-                string socialMediaPost = await CallFunction(CommunityManagerPrompts.WritePost, context);
-                _state.State.Data.WrittenSocialMediaPost = socialMediaPost;
-                await SendDesignedCreatedEvent(socialMediaPost, item.Data["UserId"]);
-                break;
-            }     
+            case nameof(EventTypes.ArticleCreated):
+                {
+                    var article = item.Data["article"];
+                    LogEvent(nameof(EventTypes.ArticleCreated), $"Article: {article}");
+                    var context = new KernelArguments { ["input"] = AppendChatHistory(article) };
+                    string socialMediaPost = await CallFunction(CommunityManagerPrompts.WritePost, context);
+                    State.State.Data.WrittenSocialMediaPost = socialMediaPost;
+                    await SendDesignedCreatedEvent(socialMediaPost, item.Data["UserId"]);
+                    break;
+                }
             default:
                 break;
         }
@@ -65,8 +60,13 @@ public class CommunityManager : AiAgent<CommunityManagerState>
         });
     }
 
-    public Task<String> GetArticle()
+    public Task<string> GetArticle()
     {
-        return Task.FromResult(_state.State.Data.WrittenSocialMediaPost);
+        return Task.FromResult(State.State.Data.WrittenSocialMediaPost);
     }
+
+    private void LogEvent(string eventType, string eventInfo) => LogEventCore(_logger, IdentityString, eventType, eventInfo);
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "[{Agent}] Event {EventType}: {EventInfo}")]
+    private static partial void LogEventCore(ILogger logger, string agent, string eventType, string eventInfo);
 }

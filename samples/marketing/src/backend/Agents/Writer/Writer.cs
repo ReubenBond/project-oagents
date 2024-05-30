@@ -11,8 +11,6 @@ namespace Marketing.Agents;
 [ImplicitStreamSubscription(Consts.OrleansNamespace)]
 public class Writer : AiAgent<WriterState>, IWriter
 {
-    protected override string Namespace => Consts.OrleansNamespace;
-    
     private readonly ILogger<GraphicDesigner> _logger;
 
     public Writer([PersistentState("state", "messages")] IPersistentState<AgentState<WriterState>> state, Kernel kernel, ISemanticTextMemory memory, ILogger<GraphicDesigner> logger) 
@@ -27,7 +25,7 @@ public class Writer : AiAgent<WriterState>, IWriter
         {
             case nameof(EventTypes.UserConnected):
                 // The user reconnected, let's send the last message if we have one
-                string lastMessage = _state.State.History.LastOrDefault()?.Message;
+                string lastMessage = State.State.History.LastOrDefault()?.Message;
                 if (lastMessage == null)
                 {
                     return;
@@ -69,6 +67,6 @@ public class Writer : AiAgent<WriterState>, IWriter
 
     public Task<String> GetArticle()
     {
-        return Task.FromResult(_state.State.Data.WrittenArticle);
+        return Task.FromResult(State.State.Data.WrittenArticle);
     }
 }

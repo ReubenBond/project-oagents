@@ -11,8 +11,6 @@ namespace Marketing.Agents;
 [ImplicitStreamSubscription(Consts.OrleansNamespace)]
 public class SignalR : Agent
 {
-    protected override string Namespace => Consts.OrleansNamespace;
-    
     private readonly ILogger<SignalR> _logger;
     private readonly ISignalRService _signalRClient;
 

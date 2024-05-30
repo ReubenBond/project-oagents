@@ -12,8 +12,6 @@ namespace Marketing.Agents;
 [ImplicitStreamSubscription(Consts.OrleansNamespace)]
 public class GraphicDesigner : AiAgent<GraphicDesignerState>
 {
-    protected override string Namespace => Consts.OrleansNamespace;
-
     private readonly ILogger<GraphicDesigner> _logger;
     private readonly IConfiguration _configuration;
 
@@ -32,7 +30,7 @@ public class GraphicDesigner : AiAgent<GraphicDesignerState>
         {
             case nameof(EventTypes.UserConnected):
                 // The user reconnected, let's send the last message if we have one
-                lastMessage = _state.State.History.LastOrDefault()?.Message;
+                lastMessage = State.State.History.LastOrDefault()?.Message;
                 if (lastMessage == null)
                 {
                     return;
@@ -45,10 +43,10 @@ public class GraphicDesigner : AiAgent<GraphicDesignerState>
                 //TODO
                 _logger.LogInformation($"[{nameof(GraphicDesigner)}] Event {nameof(EventTypes.ArticleCreated)}.");
                 var article = item.Data["article"];
-                var dallEService = _kernel.GetRequiredService<ITextToImageService>();
+                var dallEService = Kernel.GetRequiredService<ITextToImageService>();
                 var imageUri = await dallEService.GenerateImageAsync(article, 1024, 1024);
 
-                _state.State.Data.imageUrl = imageUri;
+                State.State.Data.imageUrl = imageUri;
 
                 await SendDesignedCreatedEvent(imageUri, item.Data["UserId"]);
 

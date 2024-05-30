@@ -21,7 +21,6 @@ builder.Services.AddTransient(CreateKernel);
 builder.Services.AddTransient(CreateMemory);
 builder.Services.AddHttpClient();
 
-
 builder.Services.AddTransient(s =>
 {
     var ghOptions = s.GetService<IOptions<GithubOptions>>();

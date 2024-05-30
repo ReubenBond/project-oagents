@@ -10,7 +10,6 @@ namespace Microsoft.AI.DevTeam;
 [ImplicitStreamSubscription(Consts.MainNamespace)]
 public class DeveloperLead : AiAgent<DeveloperLeadState>, ILeadDevelopers
 {
-    protected override string Namespace => Consts.MainNamespace;
     private readonly ILogger<DeveloperLead> _logger;
 
     public DeveloperLead([PersistentState("state", "messages")] IPersistentState<AgentState<DeveloperLeadState>> state, Kernel kernel, ISemanticTextMemory memory, ILogger<DeveloperLead> logger)
@@ -41,7 +40,7 @@ public class DeveloperLead : AiAgent<DeveloperLeadState>, ILeadDevelopers
             case nameof(GithubFlowEventType.DevPlanChainClosed):
                 {
                     var context = item.ToGithubContext();
-                    var latestPlan = _state.State.History.Last().Message;
+                    var latestPlan = State.State.History.Last().Message;
                     var data = context.ToData();
                     data["plan"] = latestPlan;
                     await PublishEvent(Consts.MainNamespace, this.GetPrimaryKeyString(), new Event

@@ -10,7 +10,6 @@ namespace Microsoft.AI.DevTeam;
 [ImplicitStreamSubscription(Consts.MainNamespace)]
 public class ProductManager : AiAgent<ProductManagerState>, IManageProducts
 {
-    protected override string Namespace => Consts.MainNamespace;
     private readonly ILogger<ProductManager> _logger;
 
     public ProductManager([PersistentState("state", "messages")] IPersistentState<AgentState<ProductManagerState>> state, Kernel kernel, ISemanticTextMemory memory, ILogger<ProductManager> logger) 
@@ -40,7 +39,7 @@ public class ProductManager : AiAgent<ProductManagerState>, IManageProducts
             case nameof(GithubFlowEventType.ReadmeChainClosed):
             {
                 var context = item.ToGithubContext();
-                var lastReadme = _state.State.History.Last().Message;
+                var lastReadme = State.State.History.Last().Message;
                 var data = context.ToData();
                 data["readme"] = lastReadme;
                 await PublishEvent(Consts.MainNamespace, this.GetPrimaryKeyString(), new Event {

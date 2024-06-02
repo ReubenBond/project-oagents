@@ -17,7 +17,6 @@ builder.Services.AddTransient(CreateKernel);
 builder.Services.AddTransient(CreateMemory);
 builder.Services.AddHttpClient();
 builder.Services.AddControllers();
-builder.Services.AddApplicationInsightsTelemetry();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ISignalRService, SignalRService>();
@@ -39,29 +38,25 @@ if (builder.Environment.IsDevelopment())
     });
 }
 
-builder.Services.AddOptions<OpenAIOptions>()
-    .Configure<IConfiguration>((settings, configuration) =>
-    {
-        configuration.GetSection(nameof(OpenAIOptions)).Bind(settings);
-    })
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+builder.Services.Configure<OpenAIOptions>(o =>
+{
+    o.EmbeddingsEndpoint = o.ImageEndpoint = o.ChatEndpoint = "https://api.openai.com";
+    o.EmbeddingsApiKey = o.ImageApiKey = o.ChatApiKey = builder.Configuration["OpenAI:Key"]!;
+    o.EmbeddingsDeploymentOrModelId = "text-embedding-ada-002";
+    o.ImageDeploymentOrModelId = "dall-e-3";
+    o.ChatDeploymentOrModelId = "gpt-3.5-turbo";
+});
 
 builder.Services.AddOptions<QdrantOptions>()
     .Configure<IConfiguration>((settings, configuration) =>
     {
-        configuration.GetSection(nameof(QdrantOptions)).Bind(settings);
+        configuration.GetSection("Qdrant").Bind(settings);
     })
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
 builder.Host.UseOrleans(siloBuilder =>
 {
-    siloBuilder.UseLocalhostClustering()
-               .AddMemoryStreams("StreamProvider")
-               .AddMemoryGrainStorage("PubSubStore")
-               .AddMemoryGrainStorage("messages");
-    siloBuilder.UseInMemoryReminderService();
     siloBuilder.UseDashboard(x => x.HostSelf = true);
 });
 
@@ -88,8 +83,8 @@ app.Run();
 
 static ISemanticTextMemory CreateMemory(IServiceProvider provider)
 {
-    OpenAIOptions openAiConfig = provider.GetService<IOptions<OpenAIOptions>>().Value;
-    QdrantOptions qdrantConfig = provider.GetService<IOptions<QdrantOptions>>().Value;
+    var qdrantConfig = provider.GetRequiredService<IOptions<QdrantOptions>>().Value;
+    OpenAIOptions openAiConfig = provider.GetRequiredService<IOptions<OpenAIOptions>>().Value;
 
     var loggerFactory = LoggerFactory.Create(builder =>
     {
@@ -108,14 +103,14 @@ static ISemanticTextMemory CreateMemory(IServiceProvider provider)
 
 static Kernel CreateKernel(IServiceProvider provider)
 {
-    OpenAIOptions openAiConfig = provider.GetService<IOptions<OpenAIOptions>>().Value;
+    OpenAIOptions openAiConfig = provider.GetRequiredService<IOptions<OpenAIOptions>>().Value;
     var clientOptions = new OpenAIClientOptions();
     clientOptions.Retry.NetworkTimeout = TimeSpan.FromMinutes(5);
     var builder = Kernel.CreateBuilder();
     builder.Services.AddLogging(c => c.AddConsole().AddDebug().SetMinimumLevel(LogLevel.Debug));
 
     // Chat
-    var openAIClient = new OpenAIClient(new Uri(openAiConfig.ChatEndpoint), new AzureKeyCredential(openAiConfig.ChatApiKey), clientOptions);
+    var openAIClient = new OpenAIClient(openAiConfig.ChatApiKey);
     if (openAiConfig.ChatEndpoint.Contains(".azure", StringComparison.OrdinalIgnoreCase))
     {
         builder.Services.AddAzureOpenAIChatCompletion(openAiConfig.ChatDeploymentOrModelId, openAIClient);
@@ -127,7 +122,7 @@ static Kernel CreateKernel(IServiceProvider provider)
     }
 
     // Text to Image
-    openAIClient = new OpenAIClient(new Uri(openAiConfig.ImageEndpoint), new AzureKeyCredential(openAiConfig.ImageApiKey), clientOptions);
+    openAIClient = new OpenAIClient(openAiConfig.ImageApiKey);
     if (openAiConfig.ImageEndpoint.Contains(".azure", StringComparison.OrdinalIgnoreCase))
     {
         Throw.IfNullOrEmpty(nameof(openAiConfig.ImageDeploymentOrModelId), openAiConfig.ImageDeploymentOrModelId);
@@ -139,7 +134,7 @@ static Kernel CreateKernel(IServiceProvider provider)
     }
 
     // Embeddings
-    openAIClient = new OpenAIClient(new Uri(openAiConfig.EmbeddingsEndpoint), new AzureKeyCredential(openAiConfig.EmbeddingsApiKey), clientOptions);
+    openAIClient = new OpenAIClient(openAiConfig.EmbeddingsApiKey);
     if (openAiConfig.EmbeddingsEndpoint.Contains(".azure", StringComparison.OrdinalIgnoreCase))
     {  
         builder.Services.AddAzureOpenAITextEmbeddingGeneration(openAiConfig.EmbeddingsDeploymentOrModelId, openAIClient);

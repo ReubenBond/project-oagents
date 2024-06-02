@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Protobuf Include="Protos\service.proto" GrpcServices="Server" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Microsoft.AI.Agents\Microsoft.AI.Agents.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BitFaster.Caching" Version="2.5.0" />
+		<PackageReference Include="Grpc.AspNetCore" Version="2.63.0" />
+		<PackageReference Include="Microsoft.Orleans.Serialization.Protobuf" Version="8.1.0" />
+		<PackageReference Include="Microsoft.Orleans.Server" Version="8.1.0" />
+		<PackageReference Include="Microsoft.Orleans.Streaming" Version="8.1.0" />
+	</ItemGroup>
+
+</Project>

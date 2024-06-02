@@ -1,3 +1,4 @@
+using Azure.AI.OpenAI;
 using Microsoft.AI.Agents.Abstractions;
 
 namespace Microsoft.AI.Agents.Orleans;
@@ -30,3 +31,31 @@ public sealed class EventSurrogateConverter :
             Subject = value.Subject
         };
 }
+
+public sealed class FunctionResult
+{
+    public Dictionary<string, object>? Metadata { get; set; }
+    public object? Value { get; set; }
+}
+
+public sealed class FunctionCall
+{
+    public required string Name { get; init; }
+    public Dictionary<string, object>? Arguments { get; init; } 
+    public Dictionary<string, object>? Metadata { get; init; } 
+}
+
+public interface IExternalAgentGrain : IGrainWithStringKey
+{
+    ValueTask<FunctionResult> Invoke(FunctionCall function);
+}
+
+public sealed class ExternalAgentGrain : Grain, IExternalAgentGrain
+{
+    public ValueTask<FunctionResult> Invoke(FunctionCall function)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+

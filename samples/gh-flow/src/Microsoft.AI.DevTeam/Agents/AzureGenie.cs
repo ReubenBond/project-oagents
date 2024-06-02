@@ -1,21 +1,12 @@
 ﻿using Microsoft.AI.Agents.Abstractions;
 using Microsoft.AI.Agents.Orleans;
 using Microsoft.AI.DevTeam.Events;
-using Microsoft.AI.DevTeam.Extensions;
 
 namespace Microsoft.AI.DevTeam;
 
 [ImplicitStreamSubscription(Consts.MainNamespace)]
-public class AzureGenie : Agent
+public class AzureGenie(IManageAzure azureService) : Agent
 {
-    protected override string Namespace => Consts.MainNamespace;
-    private readonly IManageAzure _azureService;
-
-    public AzureGenie(IManageAzure azureService)
-    {
-        _azureService = azureService;
-    }
-
     public override async Task HandleEvent(Event item)
     {
         if (item?.Type is null)
@@ -60,11 +51,11 @@ public class AzureGenie : Agent
 
     public async Task Store(string org, string repo, long parentIssueNumber, long issueNumber, string filename, string extension, string dir, string output)
     {
-        await _azureService.Store(org, repo, parentIssueNumber, issueNumber, filename, extension, dir, output);
+        await azureService.Store(org, repo, parentIssueNumber, issueNumber, filename, extension, dir, output);
     }
 
     public async Task RunInSandbox(string org, string repo, long parentIssueNumber, long issueNumber)
     {
-        await _azureService.RunInSandbox(org, repo, parentIssueNumber, issueNumber);
+        await azureService.RunInSandbox(org, repo, parentIssueNumber, issueNumber);
     }
 }

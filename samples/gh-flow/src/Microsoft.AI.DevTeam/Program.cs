@@ -63,13 +63,7 @@ builder.Services.AddOptions<OpenAIOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-builder.Services.AddOptions<QdrantOptions>()
-    .Configure<IConfiguration>((settings, configuration) =>
-    {
-        configuration.GetSection(nameof(QdrantOptions)).Bind(settings);
-    })
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+builder.AddQdrantClient("qdrant");
 
 builder.Services.AddOptions<ServiceOptions>()
     .Configure<IConfiguration>((settings, configuration) =>

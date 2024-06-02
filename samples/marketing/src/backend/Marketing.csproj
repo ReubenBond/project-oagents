@@ -22,6 +22,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.CognitiveServices" Version="8.0.1" />
+    <PackageReference Include="Aspire.Qdrant.Client" Version="8.0.1" />
     <PackageReference Include="Octokit.Webhooks.AspNetCore" Version="2.2.1" />
     <PackageReference Include="Octokit" Version="11.0.1" />
 
@@ -30,8 +32,6 @@
     <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.10.0-alpha" />
 
     <PackageReference Include="Microsoft.Orleans.Server" Version="8.1.0" />
-    <PackageReference Include="Microsoft.Orleans.Sdk" Version="8.1.0" />
-    <PackageReference Include="Microsoft.Orleans.Runtime" Version="8.1.0" />
     <PackageReference Include="Microsoft.Orleans.Persistence.Cosmos" Version="8.1.0" />
     <PackageReference Include="Microsoft.Orleans.Clustering.Cosmos" Version="8.1.0" />
     <PackageReference Include="Microsoft.Orleans.Reminders.Cosmos" Version="8.1.0" />
@@ -40,7 +40,6 @@
     <PackageReference Include="Microsoft.Orleans.Streaming" Version="8.1.0" />
     <PackageReference Include="OrleansDashboard" Version="8.0.0" />
 
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.3" />
@@ -51,9 +50,5 @@
     <PackageReference Include="Azure.Identity" Version="1.11.3" />
    
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.2" />
-    
-    
   </ItemGroup>
-  
-
 </Project>

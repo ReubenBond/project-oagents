@@ -16,6 +16,7 @@
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="8.0.1" />
     <PackageReference Include="Aspire.Hosting.Orleans" Version="8.0.1" />
     <PackageReference Include="Aspire.Hosting.Qdrant" Version="8.0.1" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>

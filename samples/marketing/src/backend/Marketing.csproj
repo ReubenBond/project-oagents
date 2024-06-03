@@ -9,6 +9,7 @@
 
   <ItemGroup>
 	  <ProjectReference Include="..\..\..\..\src\Microsoft.AI.Agents.Orleans\Microsoft.AI.Agents.Orleans.csproj" />
+	  <ProjectReference Include="..\..\..\..\src\Microsoft.AI.Agents.Worker.Server\Microsoft.AI.Agents.Worker.Server.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

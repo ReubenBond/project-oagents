@@ -20,42 +20,14 @@ public sealed class EventSurrogateConverter :
 {
     public Event ConvertFromSurrogate(
         in EventSurrogate surrogate) =>
-        new Event { Data = surrogate.Data, Subject = surrogate.Subject, Type = surrogate.Type };
+        new() { Data = surrogate.Data, Subject = surrogate.Subject, Type = surrogate.Type };
 
     public EventSurrogate ConvertToSurrogate(
         in Event value) =>
-        new EventSurrogate
+        new()
         {
             Data = value.Data,
             Type = value.Type,
             Subject = value.Subject
         };
 }
-
-public sealed class FunctionResult
-{
-    public Dictionary<string, object>? Metadata { get; set; }
-    public object? Value { get; set; }
-}
-
-public sealed class FunctionCall
-{
-    public required string Name { get; init; }
-    public Dictionary<string, object>? Arguments { get; init; } 
-    public Dictionary<string, object>? Metadata { get; init; } 
-}
-
-public interface IExternalAgentGrain : IGrainWithStringKey
-{
-    ValueTask<FunctionResult> Invoke(FunctionCall function);
-}
-
-public sealed class ExternalAgentGrain : Grain, IExternalAgentGrain
-{
-    public ValueTask<FunctionResult> Invoke(FunctionCall function)
-    {
-        throw new NotImplementedException();
-    }
-}
-
-

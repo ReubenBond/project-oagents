@@ -11,6 +11,7 @@ using Marketing.SignalRHub;
 using Marketing.Options;
 using Marketing;
 using Orleans.Serialization;
+using Microsoft.AI.Agents.Worker;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTransient(CreateKernel);
@@ -21,6 +22,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<ISignalRService, SignalRService>();
 
+builder.UseOrleans(siloBuilder =>
+{
+    siloBuilder.UseDashboard(x => x.HostSelf = true);
+});
+
+builder.AddAgentService();
 
 // Allow any CORS origin if in DEV
 const string AllowDebugOriginPolicy = "AllowDebugOrigin";
@@ -54,11 +61,6 @@ builder.Services.AddOptions<QdrantOptions>()
     })
     .ValidateDataAnnotations()
     .ValidateOnStart();
-
-builder.Host.UseOrleans(siloBuilder =>
-{
-    siloBuilder.UseDashboard(x => x.HostSelf = true);
-});
 
 builder.Services.Configure<JsonSerializerOptions>(options =>
 {

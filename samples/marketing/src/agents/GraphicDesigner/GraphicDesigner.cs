@@ -2,6 +2,7 @@ using Marketing.Events;
 using Marketing.Options;
 using Microsoft.AI.Agents.Abstractions;
 using Microsoft.AI.Agents.Orleans;
+using Microsoft.AI.Agents.Worker.Client;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.TextToImage;
@@ -9,8 +10,7 @@ using Orleans.Runtime;
 
 namespace Marketing.Agents;
 
-[ImplicitStreamSubscription(Consts.OrleansNamespace)]
-public class GraphicDesigner : AiAgent<GraphicDesignerState>
+public class GraphicDesigner : AgentBase
 {
     private readonly ILogger<GraphicDesigner> _logger;
     private readonly IConfiguration _configuration;
@@ -22,7 +22,7 @@ public class GraphicDesigner : AiAgent<GraphicDesignerState>
         _configuration = configuration;
     }
 
-    public async override Task HandleEvent(Event item)
+    public async Task HandleEvent(Event item)
     {
         string lastMessage;
 

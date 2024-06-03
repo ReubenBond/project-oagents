@@ -10,7 +10,8 @@ var orleans = builder.AddOrleans("orleans")
     .WithMemoryReminders()
     .WithMemoryStreaming("StreamProvider")
     .WithMemoryGrainStorage("PubSubStore")
-    .WithMemoryGrainStorage("messages");
+    .WithMemoryGrainStorage("messages")
+    .WithMemoryGrainStorage("agent-state");
 
 var backend = builder.AddProject<Projects.Marketing>("backend")
     .WithReference(orleans)

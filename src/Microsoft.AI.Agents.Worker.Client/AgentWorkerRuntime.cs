@@ -8,7 +8,35 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AI.Agents.Worker.Client;
 
-public sealed class AgentWorkerRuntime(AgentRpc.AgentRpcClient client, IHostApplicationLifetime hostApplicationLifetime, IServiceProvider serviceProvider) : IHostedService, IDisposable
+public static class HostBuilderExtensions
+{
+    public static AgentApplicationBuilder AddAgentWorker(this IHostApplicationBuilder builder)
+    {
+        if (builder.Configuration["AgentService"] is not string agentServiceAddress)
+        {
+            throw new InvalidOperationException("Missing configuration property 'AgentService'.");
+        }
+
+        builder.Services.AddGrpcClient<AgentRpc.AgentRpcClient>(options => options.Address = new Uri(agentServiceAddress));
+        builder.Services.AddSingleton<AgentWorkerRuntime>();
+        return new AgentApplicationBuilder(builder);
+    }
+}
+
+public sealed class AgentApplicationBuilder(IHostApplicationBuilder builder)
+{
+    public AgentApplicationBuilder AddAgent<TAgent>(string typeName) where TAgent : AgentBase
+    {
+        builder.Services.AddKeyedSingleton("AgentTypes", (sp, key) => Tuple.Create(typeName, typeof(TAgent)));
+        return this;
+    }
+}
+
+public sealed class AgentWorkerRuntime(
+    AgentRpc.AgentRpcClient client,
+    IHostApplicationLifetime hostApplicationLifetime,
+    IServiceProvider serviceProvider,
+    [FromKeyedServices("AgentTypes")] IEnumerable<Tuple<string, Type>> agentTypes) : IHostedService, IDisposable
 {
     private readonly ConcurrentDictionary<string, Type> _agentTypes = new();
     private readonly ConcurrentDictionary<(string Type, string Key), AgentBase> _agents = new();
@@ -70,9 +98,9 @@ public sealed class AgentWorkerRuntime(AgentRpc.AgentRpcClient client, IHostAppl
         return agent;
     }
 
-    public async ValueTask RegisterAgentType<TAgent>(string type) where TAgent : AgentBase
+    private async ValueTask RegisterAgentType(string type, Type agentType)
     {
-        if (_agentTypes.TryAdd(type, typeof(TAgent)))
+        if (_agentTypes.TryAdd(type, agentType)) 
         {
             await _channel.RequestStream.WriteAsync(new Message
             {
@@ -102,10 +130,27 @@ public sealed class AgentWorkerRuntime(AgentRpc.AgentRpcClient client, IHostAppl
         await _channel.RequestStream.WriteAsync(new Message { Event = @event });
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         _runTask = Start();
-        return Task.CompletedTask;
+        foreach (var (typeName, type) in agentTypes)
+        {
+            _agentTypes[typeName] = type;
+        }
+
+        var tasks = new List<Task>(_agentTypes.Count);
+        foreach (var (typeName, type) in _agentTypes)
+        {
+            tasks.Add(_channel.RequestStream.WriteAsync(new Message
+            {
+                RegisterAgentType = new RegisterAgentType
+                {
+                    Type = typeName,
+                }
+            }));
+        }
+
+        await Task.WhenAll(tasks);
     }
 
     internal Task Start()
@@ -139,3 +184,4 @@ public sealed class AgentWorkerRuntime(AgentRpc.AgentRpcClient client, IHostAppl
         }
     }
 }
+

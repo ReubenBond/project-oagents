@@ -8,7 +8,7 @@ namespace Microsoft.AI.Agents.Worker;
 
 public static class AgentWorkerHostingExtensions
 {
-    public static IHostApplicationBuilder AddAgentWorker(this IHostApplicationBuilder builder)
+    public static IHostApplicationBuilder AddAgentService(this IHostApplicationBuilder builder)
     {
         builder.Services.AddGrpc();
         builder.Services.AddSerializer(serializer => serializer.AddProtobufSerializer());

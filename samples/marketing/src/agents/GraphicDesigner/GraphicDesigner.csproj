@@ -9,4 +9,8 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Orleans.Server" Version="8.1.0" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\..\..\src\Microsoft.AI.Agents.Worker.Client\Microsoft.AI.Agents.Worker.Client.csproj" />
+	</ItemGroup>
 </Project>

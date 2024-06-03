@@ -74,7 +74,7 @@ public abstract class AgentBase
         switch (msg.MessageCase)
         {
             case Message.MessageOneofCase.Event:
-                await OnEvent(msg.Event.ToEvent());
+                await HandleEvent(msg.Event.Namespace, msg.Event.Topic, msg.Event.ToEvent());
                 break;
             case Message.MessageOneofCase.Request:
                 await OnRequestCore(msg.Request);
@@ -137,12 +137,15 @@ public abstract class AgentBase
         return await completion.Task;
     }
 
-    protected internal async ValueTask PublishEvent(Event @event)
+    protected internal async ValueTask PublishEvent(string ns, string topic, Event @event)
     {
-        await _context.PublishEventAsync(@event.ToRpcEvent());
+        var rpcEvent = @event.ToRpcEvent();
+        rpcEvent.Namespace = ns;
+        rpcEvent.Topic = topic;
+        await _context.PublishEventAsync(rpcEvent);
     }
 
     protected internal virtual ValueTask<RpcResponse> OnRequest(RpcRequest request) => new(new RpcResponse { Error = "Not implemented" });
 
-    protected internal virtual ValueTask OnEvent(Event @event) => default;
+    protected internal virtual ValueTask HandleEvent(string ns, string topic, Event @event) => default;
 }

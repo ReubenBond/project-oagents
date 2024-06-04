@@ -8,6 +8,5 @@ public interface IAgentWorkerRegistryGrain : IGrainWithIntegerKey
     ValueTask UnregisterAgentType(string type, IWorkerGateway worker);
     ValueTask AddWorker(IWorkerGateway worker);
     ValueTask RemoveWorker(IWorkerGateway worker);
-    ValueTask<IWorkerGateway?> GetCompatibleWorker(string type);
-    ValueTask<IWorkerGateway?> GetOrPlaceAgent(AgentId agentId);
+    ValueTask<(IWorkerGateway? Gateway, bool NewPlacment)> GetOrPlaceAgent(AgentId agentId);
 }

@@ -102,18 +102,31 @@ public sealed class AgentWorkerRegistryGrain : Grain, IAgentWorkerRegistryGrain
         return null;
     }
 
-    public ValueTask<IWorkerGateway?> GetOrPlaceAgent(AgentId agentId)
+    public ValueTask<(IWorkerGateway? Gateway, bool NewPlacment)> GetOrPlaceAgent(AgentId agentId)
     {
+        bool isNewPlacement;
         if (!_agentDirectory.TryGetValue((agentId.Type, agentId.Key), out var worker) || !_workerStates.ContainsKey(worker))
         {
             worker = GetCompatibleWorkerCore(agentId.Type);
             if (worker is not null)
             {
+                // New activation.
                 _agentDirectory[(agentId.Type, agentId.Key)] = worker;
+                isNewPlacement = true;
+            }
+            else
+            {
+                // No activation, and failed to place.
+                isNewPlacement = false;
             }
         }
+        else
+        {
+            // Existing activation.
+            isNewPlacement = false;
+        }
 
-        return new(worker);
+        return new((worker, isNewPlacement));
     }
 
     private sealed class WorkerState

@@ -25,6 +25,4 @@ builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithReference(backend)
     .WithHttpEndpoint(port: 3000, targetPort: 3000, isProxied: false);
 
-builder.AddProject<Projects.GraphicDesigner>("graphicdesigner");
-
 builder.Build().Run();

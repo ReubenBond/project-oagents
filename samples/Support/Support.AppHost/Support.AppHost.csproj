@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,8 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAspireHost>true</IsAspireHost>
-    <UserSecretsId>4a32bb5c-5b39-4907-8ca5-1c182db918cc</UserSecretsId>
+    <UserSecretsId>6e251df6-43b1-498f-87a8-3cc77c302c21</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Support.ApiService\Support.AgentHost.csproj" />
+    <ProjectReference Include="..\Support.Web\Support.Web.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="8.0.1" />
@@ -17,10 +22,6 @@
     <PackageReference Include="Aspire.Hosting.Orleans" Version="8.0.1" />
     <PackageReference Include="Aspire.Hosting.Qdrant" Version="8.0.1" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="8.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\backend\Marketing.csproj" />
   </ItemGroup>
 
 </Project>

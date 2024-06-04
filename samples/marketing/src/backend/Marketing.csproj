@@ -23,7 +23,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Azure.CognitiveServices" Version="8.0.1" />
     <PackageReference Include="Aspire.Qdrant.Client" Version="8.0.1" />
     <PackageReference Include="Octokit.Webhooks.AspNetCore" Version="2.2.1" />
     <PackageReference Include="Octokit" Version="11.0.1" />

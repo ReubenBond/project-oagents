@@ -78,7 +78,7 @@ internal sealed class WorkerGateway : BackgroundService, IWorkerGateway
 
     void DispatchResponse(WorkerProcessConnection connection, RpcResponse response)
     {
-        if (!_pendingRequests.TryGetValue((connection, Guid.Parse(response.RequestId)), out var completion))
+        if (!_pendingRequests.TryRemove((connection, Guid.Parse(response.RequestId)), out var completion))
         {
             _logger.LogWarning("Received response for unknown request.");
             return;
@@ -169,10 +169,16 @@ internal sealed class WorkerGateway : BackgroundService, IWorkerGateway
         {
             await InvokeRequestDelegate(connection, request, async request =>
             {
-                var gateway = await _gatewayRegistry.GetOrPlaceAgent(request.Target);
+                var (gateway, isPlacement) = await _gatewayRegistry.GetOrPlaceAgent(request.Target);
                 if (gateway is null)
                 {
                     return new RpcResponse { Error = "Agent not found and no compatible gateways were found." };  
+                }
+
+                if (isPlacement)
+                {
+                    // Activate the worker: load state
+                    // TODO
                 }
 
                 // Forward the message to the gateway and return the result.

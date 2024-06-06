@@ -17,7 +17,6 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddOutputCache();
-builder.Services.AddSingleton<ClientContext>();
 builder.Services.AddSingleton<Client>();
 
 var app = builder.Build();
@@ -71,36 +70,27 @@ internal sealed class MyBackgroundService(ILogger<MyBackgroundService> logger, C
     }
 }
 
-public sealed class ClientContext : IAgentContext
+public sealed class Client(ILogger<Client> logger, AgentWorkerRuntime runtime) : AgentBase(new ClientContext(logger, runtime))
 {
-    public AgentId AgentId { get; }
-    public AgentBase? AgentInstance { get; set; }
-    public ILogger Logger { get; }
-
-    private readonly AgentWorkerRuntime _runtime;
-
-    public ClientContext(ILogger<Client> logger, AgentWorkerRuntime runtime)
+    private sealed class ClientContext(ILogger<Client> logger, AgentWorkerRuntime runtime) : IAgentContext
     {
-        _runtime = runtime;
-        AgentId = new AgentId("client", Guid.NewGuid().ToString());
-        Logger = logger;
-    }
+        public AgentId AgentId { get; } = new AgentId("client", Guid.NewGuid().ToString());
+        public AgentBase? AgentInstance { get; set; }
+        public ILogger Logger { get; } = logger;
 
-    public async ValueTask PublishEventAsync(Event @event)
-    {
-        await _runtime.PublishEvent(@event);
-    }
+        public async ValueTask PublishEventAsync(Event @event)
+        {
+            await runtime.PublishEvent(@event);
+        }
 
-    public async ValueTask SendRequestAsync(AgentBase agent, RpcRequest request)
-    {
-        await _runtime.SendRequest(AgentInstance!, request);
-    }
+        public async ValueTask SendRequestAsync(AgentBase agent, RpcRequest request)
+        {
+            await runtime.SendRequest(AgentInstance!, request);
+        }
 
-    public async ValueTask SendResponseAsync(RpcRequest request, RpcResponse response)
-    {
-        await _runtime.SendResponse(response);
+        public async ValueTask SendResponseAsync(RpcRequest request, RpcResponse response)
+        {
+            await runtime.SendResponse(response);
+        }
     }
-}
-
-public sealed class Client(ClientContext context) : AgentBase(context) {
 }

@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using RpcEvent = Agents.Event;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.AI.Agents.Worker.Client;
 

@@ -14,7 +14,7 @@ public static class AgentWorkerHostingExtensions
         builder.Services.AddSerializer(serializer => serializer.AddProtobufSerializer());
 
         // Ensure Orleans is added before the hosted service to guarantee that it starts first.
-        builder.Services.AddOrleans(_ => { });
+        builder.UseOrleans();
         builder.Services.AddSingleton<WorkerGateway>();
         builder.Services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<WorkerGateway>());
 

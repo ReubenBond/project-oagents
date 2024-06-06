@@ -1,4 +1,5 @@
 ﻿using Agents;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.AI.Agents.Worker;
 
@@ -38,22 +39,36 @@ public sealed class AgentWorkerRegistryGrain : Grain, IAgentWorkerRegistryGrain
 
     public ValueTask AddWorker(IWorkerGateway worker)
     {
-        var workerStates = _workerStates[worker] ??= new();
-        workerStates.LastSeen = DateTimeOffset.UtcNow;
+        GetOrAddWorker(worker);
         return ValueTask.CompletedTask;
+    }
+
+    private WorkerState GetOrAddWorker(IWorkerGateway worker)
+    {
+        if (!_workerStates.TryGetValue(worker, out var workerState))
+        {
+            workerState = _workerStates[worker] = new();
+        }
+
+        workerState.LastSeen = DateTimeOffset.UtcNow;
+        return workerState;
     }
 
     public ValueTask RegisterAgentType(string type, IWorkerGateway worker)
     {
-        var supportedAgentTypes = _supportedAgentTypes[type] ??= [];
+        if (!_supportedAgentTypes.TryGetValue(type, out var supportedAgentTypes))
+        {
+            supportedAgentTypes = _supportedAgentTypes[type] = [];
+        }
+
         if (!supportedAgentTypes.Contains(worker))
         {
             supportedAgentTypes.Add(worker);
         }
 
-        var workerStates = _workerStates[worker] ??= new();
-        workerStates.SupportedTypes.Add(type);
-        workerStates.LastSeen = DateTimeOffset.UtcNow;
+
+        var workerState = GetOrAddWorker(worker);
+        workerState.SupportedTypes.Add(type);
 
         return ValueTask.CompletedTask;
     }

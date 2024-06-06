@@ -1,3 +1,4 @@
+using Microsoft.AI.Agents.Worker.Client;
 using Support.Web;
 using Support.Web.Components;
 
@@ -5,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire components.
 builder.AddServiceDefaults();
+builder.AddAgentWorker(builder.Configuration["Services:agenthost:https:0"]!); // https://agenthost
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

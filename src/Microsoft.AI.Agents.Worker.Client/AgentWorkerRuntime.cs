@@ -10,13 +10,8 @@ namespace Microsoft.AI.Agents.Worker.Client;
 
 public static class HostBuilderExtensions
 {
-    public static AgentApplicationBuilder AddAgentWorker(this IHostApplicationBuilder builder)
+    public static AgentApplicationBuilder AddAgentWorker(this IHostApplicationBuilder builder, string agentServiceAddress)
     {
-        if (builder.Configuration["AgentService"] is not string agentServiceAddress)
-        {
-            throw new InvalidOperationException("Missing configuration property 'AgentService'.");
-        }
-
         builder.Services.AddGrpcClient<AgentRpc.AgentRpcClient>(options => options.Address = new Uri(agentServiceAddress));
         builder.Services.AddSingleton<AgentWorkerRuntime>();
         return new AgentApplicationBuilder(builder);

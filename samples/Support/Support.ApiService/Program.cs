@@ -17,6 +17,8 @@ builder.AddAgentService();
 
 var app = builder.Build();
 
+app.MapAgentService();
+
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 

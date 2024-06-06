@@ -29,7 +29,7 @@ internal sealed class WorkerGateway : BackgroundService, IWorkerGateway
     private readonly ConcurrentDictionary<(string Type, string Key), WorkerProcessConnection> _agentDirectory = new();
 
     // RPC
-    private readonly ConcurrentDictionary<(WorkerProcessConnection, Guid), TaskCompletionSource<RpcResponse>> _pendingRequests = new();
+    private readonly ConcurrentDictionary<(WorkerProcessConnection, string), TaskCompletionSource<RpcResponse>> _pendingRequests = new();
 
     public WorkerGateway(IClusterClient clusterClient, ILogger<WorkerGateway> logger)
     {
@@ -67,18 +67,21 @@ internal sealed class WorkerGateway : BackgroundService, IWorkerGateway
         }
 
         // Proxy the request to the agent.
-        var completion = _pendingRequests[(connection, Guid.NewGuid())] = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        var originalRequestId = request.RequestId;
+        var newRequestId = Guid.NewGuid().ToString();
+        var completion = _pendingRequests[(connection, newRequestId)] = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        request.RequestId = newRequestId;
         await connection.ResponseStream.WriteAsync(new Message { Request = request });
 
         // Wait for the response and send it back to the caller.
         var response = await completion.Task.WaitAsync(AgentResponseTimeout);
-        response.RequestId = request.RequestId;
+        response.RequestId = originalRequestId;
         return response;
     }
 
     void DispatchResponse(WorkerProcessConnection connection, RpcResponse response)
     {
-        if (!_pendingRequests.TryRemove((connection, Guid.Parse(response.RequestId)), out var completion))
+        if (!_pendingRequests.TryRemove((connection, response.RequestId), out var completion))
         {
             _logger.LogWarning("Received response for unknown request.");
             return;
@@ -116,6 +119,7 @@ internal sealed class WorkerGateway : BackgroundService, IWorkerGateway
 
     internal async Task OnReceivedMessageAsync(WorkerProcessConnection connection, Message message)
     {
+        _logger.LogInformation("Received message {Message} from connection {Connection}.", message, connection);
         switch (message.MessageCase)
         {
             case Message.MessageOneofCase.Request:
@@ -228,7 +232,7 @@ internal sealed class WorkerGateway : BackgroundService, IWorkerGateway
     {
         var workerProcess = new WorkerProcessConnection(this, requestStream, responseStream, context);
         _workers[workerProcess] = workerProcess;
-        return Task.CompletedTask;
+        return workerProcess.Completion;
     }
 
     internal void OnRemoveWorkerProcess(WorkerProcessConnection workerProcess)

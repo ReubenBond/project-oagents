@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using RpcEvent = Agents.Event;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.AI.Agents.Worker.Client;
 
@@ -14,6 +15,7 @@ public static class HostBuilderExtensions
     {
         builder.Services.AddGrpcClient<AgentRpc.AgentRpcClient>(options => options.Address = new Uri(agentServiceAddress));
         builder.Services.AddSingleton<AgentWorkerRuntime>();
+        builder.Services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<AgentWorkerRuntime>());
         return new AgentApplicationBuilder(builder);
     }
 }
@@ -36,17 +38,19 @@ public sealed class AgentWorkerRuntime(
     private readonly ConcurrentDictionary<string, Type> _agentTypes = new();
     private readonly ConcurrentDictionary<(string Type, string Key), AgentBase> _agents = new();
     private readonly ConcurrentDictionary<string, (AgentBase Agent, string OriginalRequestId)> _pendingRequests = new();
-    private readonly AsyncDuplexStreamingCall<Message, Message> _channel = client.OpenChannel();
+
+    private AsyncDuplexStreamingCall<Message, Message>? _channel;
+
     private Task? _runTask;
 
     public void Dispose()
     {
-        _channel.Dispose();
+        _channel?.Dispose();
     }
 
     private async Task RunMessagePump()
     {
-        await foreach (var message in _channel.ResponseStream.ReadAllAsync(hostApplicationLifetime.ApplicationStopping))
+        await foreach (var message in _channel!.ResponseStream.ReadAllAsync(hostApplicationLifetime.ApplicationStopping))
         {
             switch (message.MessageCase)
             {
@@ -97,7 +101,7 @@ public sealed class AgentWorkerRuntime(
     {
         if (_agentTypes.TryAdd(type, agentType)) 
         {
-            await _channel.RequestStream.WriteAsync(new Message
+            await _channel!.RequestStream.WriteAsync(new Message
             {
                 RegisterAgentType = new RegisterAgentType
                 {
@@ -109,7 +113,7 @@ public sealed class AgentWorkerRuntime(
 
     public async ValueTask SendResponse(RpcResponse response)
     {
-        await _channel.RequestStream.WriteAsync(new Message { Response = response });
+        await _channel!.RequestStream.WriteAsync(new Message { Response = response });
     }
 
     public async ValueTask SendRequest(AgentBase agent, RpcRequest request)
@@ -117,16 +121,17 @@ public sealed class AgentWorkerRuntime(
         var requestId = Guid.NewGuid().ToString();
         _pendingRequests[requestId] = (agent, request.RequestId);
         request.RequestId = requestId;
-        await _channel.RequestStream.WriteAsync(new Message { Request = request });
+        await _channel!.RequestStream.WriteAsync(new Message { Request = request });
     }
 
     public async ValueTask PublishEvent(RpcEvent @event)
     {
-        await _channel.RequestStream.WriteAsync(new Message { Event = @event });
+        await _channel!.RequestStream.WriteAsync(new Message { Event = @event });
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        _channel = client.OpenChannel();
         _runTask = Start();
         foreach (var (typeName, type) in agentTypes)
         {
@@ -172,7 +177,7 @@ public sealed class AgentWorkerRuntime(
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _channel.Dispose();
+        _channel?.Dispose();
         if (_runTask is { } task)
         {
             await task;

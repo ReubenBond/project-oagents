@@ -5,6 +5,8 @@ namespace Microsoft.AI.Agents.Worker;
 
 internal sealed class WorkerProcessConnection
 {
+    private static long NextConnectionId;
+    private readonly string _connectionId = Interlocked.Increment(ref NextConnectionId).ToString();
     private readonly object _lock = new();
     private readonly HashSet<string> _supportedTypes = [];
     private readonly WorkerGateway _gateway;
@@ -74,7 +76,9 @@ internal sealed class WorkerProcessConnection
         {
             await foreach (var message in RequestStream.ReadAllAsync())
             {
-                await _gateway.OnReceivedMessageAsync(this, message);
+
+                // Fire and forget
+                _gateway.OnReceivedMessageAsync(this, message).Ignore();
             }
         }
         finally
@@ -82,4 +86,6 @@ internal sealed class WorkerProcessConnection
             _gateway.OnRemoveWorkerProcess(this);
         }
     }
+
+    public override string ToString() => $"Connection-{_connectionId}";
 }

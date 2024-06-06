@@ -7,11 +7,14 @@ namespace Microsoft.AI.Agents.Worker.Client;
 
 public abstract class AgentBase
 {
-    protected internal AgentId AgentId => _context.AgentId;
     private readonly object _lock = new();
     private readonly Dictionary<string, TaskCompletionSource<RpcResponse>> _pendingRequests = [];
     private readonly Channel<object> _mailbox = Channel.CreateUnbounded<object>();
     private readonly IAgentContext _context;
+
+    protected internal AgentId AgentId => _context.AgentId;
+    protected internal ILogger Logger => _context.Logger;
+    protected internal IAgentContext Context => _context;
 
     protected AgentBase(IAgentContext context)
     {

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Serialization;
@@ -21,9 +20,9 @@ public static class AgentWorkerHostingExtensions
         return builder;
     }
 
-    public static WebApplication MapAgentWorker(this WebApplication app, PathString path)
+    public static WebApplication MapAgentService(this WebApplication app)
     {
-        app.MapGrpcService<AgentWorkerService>();
+        app.MapGrpcService<WorkerGatewayService>();
         return app;
     }
 }

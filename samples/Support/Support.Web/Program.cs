@@ -1,25 +1,24 @@
+using Agents;
 using Microsoft.AI.Agents.Worker.Client;
-using Support.Web;
+using AgentId = Microsoft.AI.Agents.Worker.Client.AgentId;
 using Support.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire components.
 builder.AddServiceDefaults();
-builder.AddAgentWorker(builder.Configuration["Services:agenthost:https:0"]!); // https://agenthost
+
+var agentBuilder = builder.AddAgentWorker("https://agenthost");
+agentBuilder.AddAgent<GreetingAgent>("greeter");
+builder.Services.AddHostedService<MyBackgroundService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddOutputCache();
-
-builder.Services.AddHttpClient<WeatherApiClient>(client =>
-    {
-        // This URL uses "https+http://" to indicate HTTPS is preferred over HTTP.
-        // Learn more about service discovery scheme resolution at https://aka.ms/dotnet/sdschemes.
-        client.BaseAddress = new("https+http://apiservice");
-    });
+builder.Services.AddSingleton<ClientContext>();
+builder.Services.AddSingleton<Client>();
 
 var app = builder.Build();
 
@@ -43,3 +42,65 @@ app.MapRazorComponents<App>()
 app.MapDefaultEndpoints();
 
 app.Run();
+
+internal sealed class GreetingAgent(IAgentContext context, ILogger<GreetingAgent> logger) : AgentBase(context)
+{
+    protected override ValueTask HandleEvent(string ns, string topic, Microsoft.AI.Agents.Abstractions.Event @event)
+    {
+        logger.LogInformation("[{Id}] Received event for ns '{Namespace}', topic '{Topic}': '{Event}'.", AgentId, ns, topic, @event);
+        return base.HandleEvent(ns, topic, @event);
+    }
+
+    protected override ValueTask<RpcResponse> OnRequest(RpcRequest request)
+    {
+        logger.LogInformation("[{Id}] Received request: '{Request}'.", AgentId, request);
+        return new(new RpcResponse() { Result = "Okay!" });
+    }
+}
+
+internal sealed class MyBackgroundService(ILogger<MyBackgroundService> logger, Client client) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var response = await client.RequestAsync(new AgentId("greeter", "foo"), "echo", new Dictionary<string, string> { ["message"] = "Hello, agents!" });
+            logger.LogInformation("Received response: {Response}", response);
+            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+        }
+    }
+}
+
+public sealed class ClientContext : IAgentContext
+{
+    public AgentId AgentId { get; }
+    public AgentBase? AgentInstance { get; set; }
+    public ILogger Logger { get; }
+
+    private readonly AgentWorkerRuntime _runtime;
+
+    public ClientContext(ILogger<Client> logger, AgentWorkerRuntime runtime)
+    {
+        _runtime = runtime;
+        AgentId = new AgentId("client", Guid.NewGuid().ToString());
+        Logger = logger;
+    }
+
+    public async ValueTask PublishEventAsync(Event @event)
+    {
+        await _runtime.PublishEvent(@event);
+    }
+
+    public async ValueTask SendRequestAsync(AgentBase agent, RpcRequest request)
+    {
+        await _runtime.SendRequest(AgentInstance!, request);
+    }
+
+    public async ValueTask SendResponseAsync(RpcRequest request, RpcResponse response)
+    {
+        await _runtime.SendResponse(response);
+    }
+}
+
+public sealed class Client(ClientContext context) : AgentBase(context) {
+}

@@ -7,7 +7,9 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(options =>
+{
+});
 builder.AddAzureOpenAIClient("openai", settings =>
 {
     settings.Endpoint = new Uri(builder.Configuration["OpenAI:Endpoint"]!);

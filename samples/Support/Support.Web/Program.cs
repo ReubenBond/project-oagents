@@ -63,8 +63,16 @@ internal sealed class MyBackgroundService(ILogger<MyBackgroundService> logger, C
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var response = await client.RequestAsync(new AgentId("greeter", "foo"), "echo", new Dictionary<string, string> { ["message"] = "Hello, agents!" });
-            logger.LogInformation("Received response: {Response}", response);
+            try
+            {
+                var response = await client.RequestAsync(new AgentId("py_greeter", "foo"), "echo", new Dictionary<string, string> { ["message"] = "Hello, agents!" });
+                logger.LogInformation("Received response: {Response}", response);
+            }
+            catch(Exception exception)
+            {
+                logger.LogError(exception, "Error invoking request.");
+            }
+
             await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }

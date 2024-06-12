@@ -21,4 +21,8 @@ builder.AddProject<Projects.Support_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithReference(agentHost);
 
+var ep = agentHost.GetEndpoint("http");
+builder.AddExecutable("pyagent", "python", "../../../python/microsoft_ai_agents_worker_client", "worker_client.py")
+        .WithEnvironment("AGENT_HOST", $"{ep.Property(EndpointProperty.Host)}:{ep.Property(EndpointProperty.Port)}");
+
 builder.Build().Run();
